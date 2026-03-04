@@ -10,28 +10,24 @@ namespace SnogDialogue.Runtime
     public sealed class SimpleDialogueUI : MonoBehaviour, IDialogueUI
     {
         [Header("Panels")]
-        [SerializeField]
-        private GameObject linePanel;
+        [SerializeField] private GameObject linePanel;
 
-        [SerializeField]
-        private GameObject choicesPanel;
+        [SerializeField] private GameObject choicesPanel;
 
         [Header("Line UI")]
-        [SerializeField]
-        private TMP_Text lineText;
+        [SerializeField] private TMP_Text lineText;
 
-        [SerializeField]
-        private Button continueButton;
+        [SerializeField] private Button continueButton;
 
-        [SerializeField]
-        private float charactersPerSecond = 40f;
+        [SerializeField] private float charactersPerSecond = 40f;
 
         [Header("Choices UI")]
-        [SerializeField]
-        private Transform choicesContainer;
+        [SerializeField] private Transform choicesContainer;
 
-        [SerializeField]
-        private Button choiceButtonPrefab;
+        [SerializeField] private Button choiceButtonPrefab;
+
+        [Header("Typewriter Settings")]
+        [SerializeField] private Typewriter typewriter;
 
         private Action continueRequested;
         private Action<int> choiceSelected;
@@ -61,13 +57,19 @@ namespace SnogDialogue.Runtime
 
             ClearChoices();
 
-            if (typeCoroutine != null)
-            {
-                StopCoroutine(typeCoroutine);
-            }
-
             fullLine = text ?? string.Empty;
-            typeCoroutine = StartCoroutine(TypeLine(fullLine));
+
+            if (typewriter != null)
+            {
+                typewriter.Play(fullLine, null);
+            }
+            else
+            {
+                if (lineText != null)
+                {
+                    lineText.text = fullLine;
+                }
+            }
         }
 
         public void ShowChoices(IReadOnlyList<ChoiceUIEntry> choices, Action<int> onChoiceSelected)
@@ -141,6 +143,11 @@ namespace SnogDialogue.Runtime
             {
                 choicesPanel.SetActive(false);
             }
+
+            if (typewriter != null)
+            {
+                typewriter.StopTyping();
+            }
         }
 
         private IEnumerator TypeLine(string text)
@@ -170,21 +177,9 @@ namespace SnogDialogue.Runtime
 
         private void OnContinueClicked()
         {
-            if (isTyping)
+            if (typewriter != null && typewriter.IsTyping)
             {
-                if (typeCoroutine != null)
-                {
-                    StopCoroutine(typeCoroutine);
-                    typeCoroutine = null;
-                }
-
-                isTyping = false;
-
-                if (lineText != null)
-                {
-                    lineText.text = fullLine;
-                }
-
+                typewriter.SkipToEnd();
                 return;
             }
 
