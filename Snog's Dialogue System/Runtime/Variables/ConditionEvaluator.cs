@@ -26,9 +26,11 @@ namespace SnogDialogue.Runtime
                 return !store.Has(condition.key);
             }
 
-            if (!store.TryGet(condition.key, out DialogueValue actual))
+            DialogueValue actual;
+
+            if (!store.TryGet(condition.key, out actual))
             {
-                return false;
+                actual = GetDefaultValue(condition.expectedValue.Type);
             }
 
             return Compare(actual, condition.expectedValue, condition.op);
@@ -62,6 +64,27 @@ namespace SnogDialogue.Runtime
             return context.GraphVariables;
         }
 
+        private static DialogueValue GetDefaultValue(DialogueValueType type)
+        {
+            switch (type)
+            {
+                case DialogueValueType.Int:
+                    return DialogueValue.FromInt(0);
+
+                case DialogueValueType.Float:
+                    return DialogueValue.FromFloat(0f);
+
+                case DialogueValueType.Bool:
+                    return DialogueValue.FromBool(false);
+
+                case DialogueValueType.String:
+                    return DialogueValue.FromString(string.Empty);
+
+                default:
+                    return DialogueValue.FromBool(false);
+            }
+        }
+
         private static bool Compare(DialogueValue actual, DialogueValue expected, ComparisonOperator op)
         {
             if (op == ComparisonOperator.Equals || op == ComparisonOperator.NotEquals)
@@ -70,7 +93,6 @@ namespace SnogDialogue.Runtime
                 return op == ComparisonOperator.Equals ? equals : !equals;
             }
 
-            // Numeric comparisons only.
             if (!TryToFloat(actual, out float a))
             {
                 return false;
